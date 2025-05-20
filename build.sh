@@ -1,0 +1,1 @@
+g++ erorr-func.cpp error-func.h simulation.h main.cpp -o bin/final-project

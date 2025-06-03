@@ -20,4 +20,24 @@ struct simulationParams
 
 };
 
+struct Person {
+    double bankBalance;
+    double homeValue;
+    double mortgageBalance;
+    double totalEquity;
+    double totalPaidOnMortgage;
+
+    double monthlyRent;
+    double monthlyMortgage;
+    double monthlyPropertyTax;
+    double monthlyHOA;
+
+    double preTaxIncome;
+    double netIncome;
+    double capitalGainsTax;
+
+    bool employed;
+    bool homeOwner;
+};
+
 void simulate(simulationParams params);

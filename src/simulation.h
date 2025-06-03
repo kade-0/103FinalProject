@@ -2,21 +2,21 @@
 
 struct simulationParams
 {
-    float preTaxIncome;
-    float homePrice;
-    float loanLength;
-    float hoaAnnual;
-    float startingRent;
+    double preTaxIncome;
+    double homePrice;
+    double loanLength;
+    double hoaAnnual;
+    double startingRent;
 
-    float downPayRatio;
-    float mortgageInterest;
-    float propertyTaxRate;
-    float purchaseSaleTax;
-    float appreciationRate;
-    float rentInflation;
-    float etfAnnual;
+    double downPayRatio;
+    double mortgageInterest;
+    double propertyTaxRate;
+    double purchaseSaleTax;
+    double appreciationRate;
+    double rentInflation;
+    double etfAnnual;
 
-    float simulationDuration;
+    double simulationDuration;
 
 };
 

@@ -3,7 +3,7 @@
 #include <string>
 #include "error-func.h"
 
-void prettyParams(std::map<std::string, float*> args)
+void prettyParams(std::map<std::string, double*> args)
 {
     std::cout << "--------------------------------" << std::endl;
     for(const auto& [key, value] : args)
@@ -13,7 +13,7 @@ void prettyParams(std::map<std::string, float*> args)
 
 void readArgs(simulationParams* params)
 {
-    std::map<std::string, float*> args = std::map<std::string, float*>();
+    std::map<std::string, double*> args = std::map<std::string, double*>();
     
     args["Pre-Tax income"] = &params->preTaxIncome;
     args["Home price"] = &params->homePrice;
@@ -42,7 +42,7 @@ void readArgs(simulationParams* params)
             }
         }
 
-        *args[key] = std::stof(x);
+        *args[key] = std::stod(x);
     }
 
     prettyParams(args);

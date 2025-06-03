@@ -1,19 +1,19 @@
 #include "simulation.h"
-#include <unordered_map>
+#include <map>
 #include <string>
 #include "error-func.h"
 
-void prettyParams(std::unordered_map<std::string, float*> args)
+void prettyParams(std::map<std::string, float*> args)
 {
     std::cout << "--------------------------------" << std::endl;
     for(const auto& [key, value] : args)
-        std::cout << "[" << key << "] - " << *value << std::endl;
+        std::cout << "[" << key << "]       - " << *value << std::endl;
     std::cout << "--------------------------------" << std::endl;
 }
 
 void readArgs(simulationParams* params)
 {
-    std::unordered_map<std::string, float*> args = std::unordered_map<std::string, float*>();
+    std::map<std::string, float*> args = std::map<std::string, float*>();
     
     args["Pre-Tax income"] = &params->preTaxIncome;
     args["Home price"] = &params->homePrice;
@@ -26,7 +26,6 @@ void readArgs(simulationParams* params)
     args["Appreciation Rate"] = &params->appreciationRate;
     args["Rent Inflation"] = &params->rentInflation;
     args["ETF Annual"] = &params->etfAnnual;
-
     args["Simulation Duration"] = &params->simulationDuration;
 
     for(const auto& [key, value] : args)
@@ -88,6 +87,8 @@ int main()
     }
     else
         defaultParams(&params);
+
+    simulate(params);
 
     return 0;
 }

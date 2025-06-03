@@ -19,3 +19,5 @@ struct simulationParams
     float simulationDuration;
 
 };
+
+void simulate(simulationParams params);

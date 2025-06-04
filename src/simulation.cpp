@@ -172,13 +172,18 @@ void simulate(simulationParams params)
     srand(time(0)); // Seed the random number generator
     p.etfBalance = 0; // Initial ETF balance
     p.homeOwner = params.homeOwner;
-    
-    clearConsole();
-    std::cout << "--- Simulation started ---" << std::endl;
 
     while(month < params.simulationDuration*12)
     {
         std::cout << "Year: " << year + 1 << ", Month: " << (month % 12) + 1 << std::endl;
+
+        updateETFBalance(p.etfBalance);
+        if (p.bankBalance > 0) {
+            investInETF(p.bankBalance, p.etfBalance);
+        }
+        else {
+            std::cout << "Insufficient funds to invest in ETF." << std::endl;
+        }
 
         // If not a homeowner, calculate rent and update bank balance
         if (!p.homeOwner) {
@@ -262,15 +267,6 @@ void simulate(simulationParams params)
             std::cout << "Bankruptcy occurred!" << std::endl;
             break;
         }
-
-        updateETFBalance(p.etfBalance);
-        if (p.bankBalance > 0) {
-            investInETF(p.bankBalance, p.etfBalance);
-        }
-        else {
-            std::cout << "Insufficient funds to invest in ETF." << std::endl;
-        }
-
         if (year > 0) {
             p.totalIncome = (p.bankBalance - states[year -1].bankBalance); // Calculate total income for the year
         }
@@ -278,10 +274,10 @@ void simulate(simulationParams params)
         // Increment month and check if we need to move to the next year
         month++;
         if (month % 12 == 0) {
+            clearConsole();
             year++;
             p.preTaxIncome *= 1.05; // Assume a 5% salary increase each year
         }
-        clearConsole();
     }
 
     std::cout << "--- Simulation ended ---" << std::endl;
@@ -317,7 +313,10 @@ void simulate(simulationParams params)
     std::cout << "ETF Balance: $" << p.etfBalance << std::endl;
     std::cout << "Total Income over simulation: $" << absoluteIncome << std::endl;
     if (year < params.simulationDuration)
-        std::cout << "Simulation Duration: " << year << "/" << params.simulationDuration << " years" << std::endl;
+    {
+        float yearFraction = (float)(month % 12) / 12.0f;
+        std::cout << "Simulation Duration: " << yearFraction << "/" << params.simulationDuration << " years" << std::endl;
+    }
     else
         std::cout << "Simulation Duration: " << params.simulationDuration << " years" << std::endl;
 

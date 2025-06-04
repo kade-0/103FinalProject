@@ -292,6 +292,10 @@ void simulate(simulationParams params)
 
     // Print each year's state
     for (int i = 0; i <= year; i++) {
+        double netWorth = states[i].bankBalance - states[i].mortgageBalance + states[i].etfBalance;
+        if (states[i].homeOwner) {
+            netWorth += states[i].homeValue;
+        }
         std::cout << "Year " << i + 1 << ":"
                   << " Bank Balance: $" << states[i].bankBalance << ", "
                   << " Home Value: $" << states[i].homeValue << ", "
@@ -299,18 +303,26 @@ void simulate(simulationParams params)
                   << " Total Paid on Mortgage: $" << states[i].totalPaidOnMortgage << ", "
                   << " Pre-Tax Income: $" << states[i].preTaxIncome << ", "
                   << " Net Income: $" << states[i].totalIncome
+                  << " Net Worth: $" << netWorth
                   << std::endl;
     }
 
     std::cout << "Final Assets:" << std::endl;
     std::cout << "Bank Balance: $" << p.bankBalance << std::endl;
+    std::cout << "ETF Balance: $" << p.etfBalance << std::endl;
     if (p.homeOwner) {
+        float netWorth = p.bankBalance + p.homeValue - p.mortgageBalance + p.etfBalance;
         std::cout << "Home Value: $" << p.homeValue << std::endl;
         std::cout << "Mortgage Balance: $" << p.mortgageBalance << std::endl;
         std::cout << "Total Equity: $" << p.totalEquity << std::endl;
         std::cout << "Total Paid on Mortgage: $" << p.totalPaidOnMortgage << std::endl;
+        std::cout << "Net Worth: $" << netWorth << std::endl;
     }
-    std::cout << "ETF Balance: $" << p.etfBalance << std::endl;
+    else
+    {
+        float netWorth = p.bankBalance + p.etfBalance;
+        std::cout << "Net Worth: $" << netWorth << std::endl;
+    }
     std::cout << "Total Income over simulation: $" << absoluteIncome << std::endl;
     if (year < params.simulationDuration)
     {

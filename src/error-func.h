@@ -1,3 +1,10 @@
+/*
+    * error-func.h
+    * This header file defines utility functions for error checking and input validation.
+    * 
+    * Contributors: Kade Miller
+*/
+
 #include <string>
 #include <iostream>
 

@@ -1,3 +1,12 @@
+/*
+    * main.cpp
+    * This source file contains the main function and user interaction logic for the home ownership simulation.
+    * It includes parameter setup, user input handling, and the simulation execution.
+    *
+    * Contributors: Kade Miller, Alex Janigan, Eli Briggs, Cam
+*/
+
+
 #include "simulation.h"
 #include <map>
 #include <string>
@@ -87,6 +96,12 @@ int main()
     }
     else
         defaultParams(&params);
+
+    // Do you want to be a homeowner?
+    std::cout << "Do you want to be a homeowner?\n[1] - Yes. [2] - No" << std::endl;
+    std::string home = "";
+    std::getline(std::cin, home);
+    params.homeOwner = (home == "1");
 
     simulate(params);
 

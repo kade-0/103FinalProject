@@ -1,3 +1,10 @@
+/*
+    * error-func.cpp
+    * This source file implements utility functions for error checking and input validation.
+    *
+    * Contributors: Kade Miller
+*/
+
 #include "error-func.h"
 
 bool check_range(int lower, int upper, int x)

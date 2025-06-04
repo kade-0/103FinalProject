@@ -1,3 +1,11 @@
+/*
+    * simulation.cpp
+    * This source file implements the functions and logic for the home ownership simulation.
+    * It includes the simulation loop, financial calculations, and user interactions.
+    * 
+    * Contributors: Kade Miller, Eli Briggs
+*/
+
 #include "simulation.h"
 #include <cmath>
 #include <iomanip>
@@ -5,9 +13,7 @@
 
 double calculateMonthlyIncome(double annualIncome, int currentYear, bool isEmployed) {
     if (!isEmployed) return 0.0;
-    // 5% salary growth
-    double adjustedAnnual = annualIncome * pow(1.05, currentYear-1);
-    return adjustedAnnual / 12.0;
+    return annualIncome / 12.0;
 }
 
 double calculateMonthlyMortgage(double principal, double rate, int termYears) {
@@ -17,10 +23,110 @@ double calculateMonthlyMortgage(double principal, double rate, int termYears) {
            (pow(1 + monthlyRate, termMonths) - 1);
 }
 
+// random unemployment chance
+bool didWeBetItAllOnBlack()
+{
+    // 10% chance of unemployment
+    return (rand() % 100) < 10;
+}
+
+bool getAJob()
+{
+    // 4 attempts (weeks) per month
+    for (int i = 0; i < 4; i++) {
+        if ((rand() % 6) + 1 > 3) return true; // 4,5,6 succeeds
+    }
+    return false;
+}
+
+double getETFReturn(double annualReturn) {
+    double fluctuation = (rand() % 400 - 200) / 10000.0; // -2% to +2%
+    double monthlyRate = pow(1.0 + (annualReturn/100.0 + fluctuation), 1.0/12.0) - 1.0;
+    return monthlyRate;
+}
+
+void updateETFBalance(double& etfBalance) {
+    double previousBalance = etfBalance;
+    double growthRate = getETFReturn(7.0); // 7% base annual return
+    etfBalance *= (1.0 + growthRate);
+    
+    double difference = etfBalance - previousBalance;
+    if (difference > 0) {
+        std::cout << "ETF balance increased by $" << difference << std::endl;
+    } else if (difference < 0) {
+        std::cout << "ETF balance decreased by $" << -difference << std::endl;
+    }
+}
+
+// player choice to invest in EFT
+void investInETF(double& bankBalance, double& etfBalance) {
+    std::string amount;
+    std::cout << "Do you want to invest in ETF? (Current ETF balance: $" << etfBalance << ", Current bank balance: $" << bankBalance << ")\n"
+              << "Enter amount to invest (or '0' to skip): ";
+    while(amount.length() <= 0) {
+        std::getline(std::cin, amount);
+        if (!is_float(amount)) {
+            std::cout << "That is not an acceptable input." << std::endl;
+            amount = "";
+        }
+    }
+
+    double investAmount = std::stod(amount);
+    if (investAmount > 0 && investAmount <= bankBalance) {
+        bankBalance -= investAmount;
+        etfBalance += investAmount;
+        std::cout << "Invested $" << investAmount << " in ETF. New ETF balance: $" << etfBalance << std::endl;
+    } else if (investAmount > bankBalance) {
+        std::cout << "Insufficient funds to invest that amount." << std::endl;
+    } else {
+        std::cout << "No investment made." << std::endl;
+    }
+}
+
+void sellETF(double& bankBalance, double& etfBalance) {
+    std::string amount;
+    std::cout << "Do you want to sell ETF? (Current ETF balance: $" << etfBalance << ", Current bank balance: $" << bankBalance << ")\n"
+              << "Enter amount to sell (or '0' to skip): ";
+    while(amount.length() <= 0) {
+        std::getline(std::cin, amount);
+        if (!is_float(amount)) {
+            std::cout << "That is not an acceptable input." << std::endl;
+            amount = "";
+        }
+    }
+
+    double sellAmount = std::stod(amount);
+    if (sellAmount > 0 && sellAmount <= etfBalance) {
+        // Transaction fee of 0.5% on the sell amount
+        double transactionFee = sellAmount * 0.005;
+        etfBalance -= sellAmount;
+        bankBalance += sellAmount - transactionFee;
+        std::cout << "Sold $" << sellAmount << " of ETF. New bank balance: $" << bankBalance << std::endl;
+    } else if (sellAmount > etfBalance) {
+        std::cout << "Insufficient ETF balance to sell that amount." << std::endl;
+    } else {
+        std::cout << "No sale made." << std::endl;
+    }
+}
+
+bool attemptHomeSale() {
+    return (rand() % 6) + 1 > 3; // 4,5,6 succeeds
+}
+
+double calculateCapitalGainsTax(double purchasePrice, double salePrice) {
+    double gain = salePrice - purchasePrice;
+    if (gain > 250000) {
+        return gain * 0.09; // 9% tax
+    }
+    return 0.0;
+}
+
 void simulate(simulationParams params)
 {
     int year = 0;
     int month = 0;
+
+    Person states[(int)params.simulationDuration + 1]; // +1 for initial state
 
     Person p;
     p.bankBalance = 0;
@@ -48,22 +154,124 @@ void simulate(simulationParams params)
 
     p.preTaxIncome = params.preTaxIncome;
     p.netIncome = 0; // set later for post tax
-    p.capitalGainsTax = 0; // set later for tax stuff
+    p.capitalGainsTax = 0; // set later if home is sold
+
+    std::cout << std::fixed << std::setprecision(2); // Set precision for monetary values
+
+    srand(time(0)); // Seed the random number generator
+    p.etfBalance = 0; // Initial ETF balance
+    p.homeOwner = params.homeOwner;
+    
+    std::cout << "--- Simulation started ---" << std::endl;
 
     while(month < params.simulationDuration*12)
     {
-        if (month % 12 == 0)
-            year++;
+        std::cout << "Year: " << year + 1 << ", Month: " << (month % 12) + 1 << std::endl;
+        // If not a homeowner, calculate rent and update bank balance
+        if (!params.homeOwner) {
+            p.monthlyRent = params.startingRent * pow(1 + params.rentInflation / 100.0, year);
+            p.bankBalance -= p.monthlyRent;
+        } else {
+            p.monthlyRent = 0; // No rent if homeowner
+        }
+
+        // Calculate monthly income
+        p.netIncome = calculateMonthlyIncome(p.preTaxIncome, year, p.employed);
+        if (p.employed) {
+            p.bankBalance += p.netIncome;
+        } else {
+            // If unemployed, we lose money
+            p.bankBalance -= p.monthlyMortgage + p.monthlyPropertyTax + p.monthlyHOA;
+        }
+
+        // If homeowner, pay mortgage and property tax
+        if (params.homeOwner) {
+            p.bankBalance -= p.monthlyMortgage + p.monthlyPropertyTax + p.monthlyHOA;
+
+            double interest = p.mortgageBalance * (params.mortgageInterest / 100.0);
+            double principalPayment = p.monthlyMortgage - interest;
+            p.mortgageBalance -= principalPayment;
+            p.totalPaidOnMortgage += principalPayment + p.monthlyPropertyTax + p.monthlyHOA;
+
+            // Update home value based on appreciation
+            float fluctuation = (rand() % 400 - 200) / 10000.0; // -5% to +5%
+            p.homeValue *= (1 + params.appreciationRate / 100.0 / 12.0 + fluctuation);
+            p.totalEquity = p.homeValue - p.mortgageBalance;
+        } else {
+            // If not a homeowner, update bank balance with rent
+            p.bankBalance -= p.monthlyRent;
+        }
+
+        // Check for unemployment
+        if (didWeBetItAllOnBlack()) {
+            std::cout << "Unemployment occurred!" << std::endl;
+            p.employed = false;
+        }
+
+        // If unemployed, try to get a job
+        if (!p.employed) {
+            if (getAJob()) {
+                std::cout << "Got a job!" << std::endl;
+                p.employed = true;
+            }
+        }
+
+        // Sell ETF if bank balance is low
+        if (p.bankBalance < 0 && p.etfBalance > 0) {
+            sellETF(p.bankBalance, p.etfBalance);
+        }
+
+        // Check if we want to sell the home
+        if (params.homeOwner && p.bankBalance <= 0) {
+            if (attemptHomeSale()) {
+                double salePrice = p.homeValue;
+                double tax = calculateCapitalGainsTax(p.homeValue, salePrice);
+                p.bankBalance += (salePrice - tax);
+                p.homeValue = 0;
+                p.mortgageBalance = 0;
+                p.totalEquity = 0;
+                p.totalPaidOnMortgage = 0;
+                std::cout << "Home sold for $" << salePrice << " with $" << tax << " in taxes." << std::endl;
+            }
+        }
+
+        states[year] = p; // Save state for this month
+
+        // Check for bankruptcy
+        if (p.bankBalance < 0 && !p.employed) {
+            std::cout << "Bankruptcy occurred!" << std::endl;
+            break;
+        }
+
+        updateETFBalance(p.etfBalance);
+        if (p.bankBalance > 0) {
+            investInETF(p.bankBalance, p.etfBalance);
+        }
+
+        // Increment month and check if we need to move to the next year
         month++;
-
-        double income = calculateMonthlyIncome(p.preTaxIncome, year, p.employed);
-        p.bankBalance += income;
-
-        // Home owner
-        p.bankBalance -= p.monthlyMortgage;
-        p.bankBalance -= p.monthlyPropertyTax;
-        p.bankBalance -= p.monthlyHOA;
-
-        std::cout << std::fixed << std::setprecision(0) << p.bankBalance << std::endl;
+        if (month % 12 == 0) {
+            year++;
+            p.preTaxIncome *= 1.05; // Assume a 5% salary increase each year
+        }
     }
+
+    std::cout << "--- Simulation ended ---" << std::endl;
+
+    // Final state after simulation
+    states[year] = p;
+
+
+    // Print each year's state
+    for (int i = 0; i <= year; i++) {
+        std::cout << "Year " << i + 1 << ": " << "," 
+                  << " Bank Balance: $" << states[i].bankBalance << ", "
+                  << " Home Value: $" << states[i].homeValue << ", "
+                  << " Total Equity: $" << states[i].totalEquity << ", "
+                  << " Total Paid on Mortgage: $" << states[i].totalPaidOnMortgage << ", "
+                  << " Pre-Tax Income: $" << states[i].preTaxIncome << ", "
+                  << " Net Income: $" << states[i].netIncome 
+                  << std::endl;
+    }
+
 }

@@ -1,3 +1,12 @@
+/*
+    * simulation.h
+    * This header file defines the structures and function prototypes for the home ownership simulation.
+    * It includes the Person structure to represent an individual's financial state and the simulationParams
+    * structure to hold parameters for the simulation.
+    * 
+    * Contributors: Kade Miller
+*/
+
 #include <iostream>
 
 struct simulationParams
@@ -18,6 +27,8 @@ struct simulationParams
 
     double simulationDuration;
 
+    bool homeOwner;
+
 };
 
 struct Person {
@@ -35,6 +46,8 @@ struct Person {
     double preTaxIncome;
     double netIncome;
     double capitalGainsTax;
+
+    double etfBalance;
 
     bool employed;
     bool homeOwner;

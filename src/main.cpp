@@ -103,7 +103,35 @@ int main()
     std::getline(std::cin, home);
     params.homeOwner = (home == "1");
 
+    // Override simulation duration length
+    if (def == "1")
+    {
+        std::cout << "Override simulation duration length (current: " << params.simulationDuration << " years): ";
+        std::string duration;
+        while (duration.length() <= 0)
+        {
+            std::cout << "\nEnter a new duration in years: ";
+            std::getline(std::cin, duration);
+            if (is_float(duration))
+            {
+                params.simulationDuration = std::stof(duration);
+            }
+            else
+            {
+                std::cout << "That is not an acceptable input." << std::endl;
+                duration = "";
+            }
+        }
+    }
+
     simulate(params);
+
+    // Ask if the user wants to run another simulation
+    std::cout << "Do you want to run another simulation?\n[1] - Yes. [2] - No" << std::endl;
+    std::string again = "";
+    std::getline(std::cin, again);
+    if (again == "1")
+        return main();
 
     return 0;
 }

@@ -49,6 +49,8 @@ struct Person {
 
     double etfBalance;
 
+    double totalIncome;
+
     bool employed;
     bool homeOwner;
 };

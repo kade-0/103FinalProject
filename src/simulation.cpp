@@ -11,6 +11,16 @@
 #include <iomanip>
 #include "error-func.h"
 
+void clearConsole() {
+    //G++ platform specific console clear
+#ifdef _WIN32
+    system("cls");
+#else
+    // POSIX compliant console clear
+    system("clear");
+#endif
+}
+
 double calculateMonthlyIncome(double annualIncome, int currentYear, bool isEmployed) {
     if (!isEmployed) return 0.0;
     return annualIncome / 12.0;
@@ -32,9 +42,11 @@ bool didWeBetItAllOnBlack()
 
 bool getAJob()
 {
-    // 4 attempts (weeks) per month
+    // 1d6 every week (so 4 times a month)
     for (int i = 0; i < 4; i++) {
-        if ((rand() % 6) + 1 > 3) return true; // 4,5,6 succeeds
+        if ((rand() % 6) + 1 >= 6) { // 4,5,6 succeeds
+            return true;
+        }
     }
     return false;
 }
@@ -157,18 +169,19 @@ void simulate(simulationParams params)
     p.capitalGainsTax = 0; // set later if home is sold
 
     std::cout << std::fixed << std::setprecision(2); // Set precision for monetary values
-
     srand(time(0)); // Seed the random number generator
     p.etfBalance = 0; // Initial ETF balance
     p.homeOwner = params.homeOwner;
     
+    clearConsole();
     std::cout << "--- Simulation started ---" << std::endl;
 
     while(month < params.simulationDuration*12)
     {
         std::cout << "Year: " << year + 1 << ", Month: " << (month % 12) + 1 << std::endl;
+
         // If not a homeowner, calculate rent and update bank balance
-        if (!params.homeOwner) {
+        if (!p.homeOwner) {
             p.monthlyRent = params.startingRent * pow(1 + params.rentInflation / 100.0, year);
             p.bankBalance -= p.monthlyRent;
         } else {
@@ -184,8 +197,12 @@ void simulate(simulationParams params)
             p.bankBalance -= p.monthlyMortgage + p.monthlyPropertyTax + p.monthlyHOA;
         }
 
+        // Update home value based on appreciation
+        float fluctuation = (rand() % 400 - 200) / 10000.0; // -5% to +5%
+        p.homeValue *= (1 + params.appreciationRate / 100.0 / 12.0 + fluctuation);
+
         // If homeowner, pay mortgage and property tax
-        if (params.homeOwner) {
+        if (p.homeOwner) {
             p.bankBalance -= p.monthlyMortgage + p.monthlyPropertyTax + p.monthlyHOA;
 
             double interest = p.mortgageBalance * (params.mortgageInterest / 100.0);
@@ -193,19 +210,10 @@ void simulate(simulationParams params)
             p.mortgageBalance -= principalPayment;
             p.totalPaidOnMortgage += principalPayment + p.monthlyPropertyTax + p.monthlyHOA;
 
-            // Update home value based on appreciation
-            float fluctuation = (rand() % 400 - 200) / 10000.0; // -5% to +5%
-            p.homeValue *= (1 + params.appreciationRate / 100.0 / 12.0 + fluctuation);
             p.totalEquity = p.homeValue - p.mortgageBalance;
         } else {
             // If not a homeowner, update bank balance with rent
             p.bankBalance -= p.monthlyRent;
-        }
-
-        // Check for unemployment
-        if (didWeBetItAllOnBlack()) {
-            std::cout << "Unemployment occurred!" << std::endl;
-            p.employed = false;
         }
 
         // If unemployed, try to get a job
@@ -216,13 +224,19 @@ void simulate(simulationParams params)
             }
         }
 
+        // Check for unemployment
+        if (didWeBetItAllOnBlack()) {
+            std::cout << "Unemployment occurred!" << std::endl;
+            p.employed = false;
+        }
+
         // Sell ETF if bank balance is low
-        if (p.bankBalance < 0 && p.etfBalance > 0) {
+        if (p.bankBalance < 0 && p.etfBalance >= -p.bankBalance) {
             sellETF(p.bankBalance, p.etfBalance);
         }
 
         // Check if we want to sell the home
-        if (params.homeOwner && p.bankBalance <= 0) {
+        if (p.homeOwner && p.bankBalance <= 0) {
             if (attemptHomeSale()) {
                 double salePrice = p.homeValue;
                 double tax = calculateCapitalGainsTax(p.homeValue, salePrice);
@@ -235,6 +249,12 @@ void simulate(simulationParams params)
             }
         }
 
+        if (!p.homeOwner) {
+            // No equity or mortgage calculations for renters
+            p.mortgageBalance = 0;
+            p.totalEquity = 0;
+            p.totalPaidOnMortgage = 0;
+        }
         states[year] = p; // Save state for this month
 
         // Check for bankruptcy
@@ -247,6 +267,13 @@ void simulate(simulationParams params)
         if (p.bankBalance > 0) {
             investInETF(p.bankBalance, p.etfBalance);
         }
+        else {
+            std::cout << "Insufficient funds to invest in ETF." << std::endl;
+        }
+
+        if (year > 0) {
+            p.totalIncome = (p.bankBalance - states[year -1].bankBalance); // Calculate total income for the year
+        }
 
         // Increment month and check if we need to move to the next year
         month++;
@@ -254,6 +281,7 @@ void simulate(simulationParams params)
             year++;
             p.preTaxIncome *= 1.05; // Assume a 5% salary increase each year
         }
+        clearConsole();
     }
 
     std::cout << "--- Simulation ended ---" << std::endl;
@@ -261,17 +289,39 @@ void simulate(simulationParams params)
     // Final state after simulation
     states[year] = p;
 
+    double absoluteIncome = 0;
+    for (int i = 0; i <= year; i++) {
+        absoluteIncome += states[i].totalIncome;
+    }
 
     // Print each year's state
     for (int i = 0; i <= year; i++) {
-        std::cout << "Year " << i + 1 << ": " << "," 
+        std::cout << "Year " << i + 1 << ":"
                   << " Bank Balance: $" << states[i].bankBalance << ", "
                   << " Home Value: $" << states[i].homeValue << ", "
                   << " Total Equity: $" << states[i].totalEquity << ", "
                   << " Total Paid on Mortgage: $" << states[i].totalPaidOnMortgage << ", "
                   << " Pre-Tax Income: $" << states[i].preTaxIncome << ", "
-                  << " Net Income: $" << states[i].netIncome 
+                  << " Net Income: $" << states[i].totalIncome
                   << std::endl;
     }
 
+    std::cout << "Final Assets:" << std::endl;
+    std::cout << "Bank Balance: $" << p.bankBalance << std::endl;
+    if (p.homeOwner) {
+        std::cout << "Home Value: $" << p.homeValue << std::endl;
+        std::cout << "Mortgage Balance: $" << p.mortgageBalance << std::endl;
+        std::cout << "Total Equity: $" << p.totalEquity << std::endl;
+        std::cout << "Total Paid on Mortgage: $" << p.totalPaidOnMortgage << std::endl;
+    }
+    std::cout << "ETF Balance: $" << p.etfBalance << std::endl;
+    std::cout << "Total Income over simulation: $" << absoluteIncome << std::endl;
+    if (year < params.simulationDuration)
+        std::cout << "Simulation Duration: " << year << "/" << params.simulationDuration << " years" << std::endl;
+    else
+        std::cout << "Simulation Duration: " << params.simulationDuration << " years" << std::endl;
+
+    std::cout << "--------------------------------" << std::endl;
+    std::cout << "Simulation completed successfully!" << std::endl;
+    std::cout << "--------------------------------" << std::endl;
 }

@@ -3,7 +3,7 @@
     * This source file implements the functions and logic for the home ownership simulation.
     * It includes the simulation loop, financial calculations, and user interactions.
     * 
-    * Contributors: Kade Miller, Eli Briggs
+    * Contributors: Kade Miller, Eli Brunner
 */
 
 #include "simulation.h"

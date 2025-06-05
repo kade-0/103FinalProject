@@ -3,7 +3,7 @@
     * This source file contains the main function and user interaction logic for the home ownership simulation.
     * It includes parameter setup, user input handling, and the simulation execution.
     *
-    * Contributors: Kade Miller, Alex Janigan, Eli Briggs, Cam
+    * Contributors: Kade Miller, Alex Janigan, Eli Briggs, Camron smith,samuel chukwuma
 */
 
 
